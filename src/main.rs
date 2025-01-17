@@ -55,6 +55,13 @@ async fn main() {
                     println!("Max Temperature: {}°C", forecast_day["day"]["maxtemp_c"].to_string().red());
                     println!("Min Temperature: {}°C", forecast_day["day"]["mintemp_c"].to_string().blue());
                     println!("Condition: {}", forecast_day["day"]["condition"]["text"].to_string().green());
+                    println!("Chance of rain: {}", forecast_day["day"]["daily_chance_of_rain"].to_string().bright_blue());
+                    println!("Chance of snow: {}", forecast_day["day"]["daily_chance_of_snow"].to_string().bright_purple());
+                    println!("Sunrise: {}", forecast_day["astro"]["sunrise"].to_string().bright_yellow());
+                    println!("Sunset: {}", forecast_day["astro"]["sunset"].to_string().bright_yellow());
+                    println!("Moonphase: {}", forecast_day["astro"]["moon_phase"].to_string().bright_yellow());
+                    println!("Moonrise: {}", forecast_day["astro"]["moonrise"].to_string().bright_yellow());
+                    println!("Moonset: {}", forecast_day["astro"]["moonset"].to_string().bright_yellow());
                 }
             }
         }

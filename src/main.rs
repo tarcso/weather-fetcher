@@ -17,6 +17,12 @@ struct Args {
 struct CurrentWeather {
     temp_c: f32,
     humidity: u8,
+    condition: Condition,  // Added the condition field
+}
+
+#[derive(Deserialize)]
+struct Condition {
+    text: String,  // This is the weather description (e.g., "clear sky")
 }
 
 #[derive(Deserialize)]
@@ -59,6 +65,7 @@ async fn main() {
         Ok(data) => {
             println!("Temperature: {}°C", data.current.temp_c);
             println!("Humidity: {}%", data.current.humidity);
+            println!("Condition: {}", data.current.condition.text); // Output the weather condition
             
             // Check if forecast data is present and print it
             if let Some(forecast) = data.forecast {

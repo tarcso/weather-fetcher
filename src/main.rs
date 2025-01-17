@@ -1,11 +1,13 @@
 use clap::Parser;
 use reqwest::Error;
-use serde::Deserialize;
+use serde_json::Value;
+use colored::*;  // Import the colored crate
 
 #[derive(Parser)]
 /// A simple CLI tool to fetch weather information.
 struct Args {
     /// City name (e.g., "London")
+    #[clap(short, long, default_value = "Budapest")]
     city: String,
     
     /// Unit system (metric/imperial)
@@ -13,46 +15,14 @@ struct Args {
     units: String,
 }
 
-#[derive(Deserialize)]
-struct CurrentWeather {
-    temp_c: f32,
-    humidity: u8,
-    condition: Condition,  // Added the condition field
-}
-
-#[derive(Deserialize)]
-struct Condition {
-    text: String,  // This is the weather description (e.g., "clear sky")
-}
-
-#[derive(Deserialize)]
-struct WeatherResponse {
-    current: CurrentWeather,
-    forecast: Option<Forecast>,
-}
-
-#[derive(Deserialize)]
-struct Forecast {
-    forecastday: Vec<ForecastDay>,
-}
-
-#[derive(Deserialize)]
-struct ForecastDay {
-    day: Day,
-}
-
-#[derive(Deserialize)]
-struct Day {
-    avgtemp_c: f32,
-}
-
-async fn fetch_weather(city: &str, _units: &str, api_key: &str) -> Result<WeatherResponse, Error> {
+async fn fetch_weather(city: &str, _units: &str, api_key: &str) -> Result<Value, Error> {
     let url = format!(
-        "http://api.weatherapi.com/v1/current.json?key={}&q={}&aqi=no",
+        "http://api.weatherapi.com/v1/forecast.json?key={}&q={}&days=3&aqi=no",  // Requesting forecast for 3 days
         api_key, city
     );
     
-    let response = reqwest::get(&url).await?.json::<WeatherResponse>().await?;
+    // Fetch the weather data as raw JSON
+    let response = reqwest::get(&url).await?.json::<Value>().await?;
     Ok(response)
 }
 
@@ -63,22 +33,32 @@ async fn main() {
     
     match fetch_weather(&args.city, &args.units, api_key).await {
         Ok(data) => {
-            println!("Temperature: {}°C", data.current.temp_c);
-            println!("Humidity: {}%", data.current.humidity);
-            println!("Condition: {}", data.current.condition.text); // Output the weather condition
+            // Use colors to enhance the output
+            let current = &data["current"];
+            println!("{}", "Current Weather Information:".bold().green());
+            println!("Temperature: {}°C", current["temp_c"].to_string().red());
+            println!("Feels like: {}°C", current["feelslike_c"].to_string().cyan());
+            println!("Humidity: {}", current["humidity"].to_string().purple());
+            println!("Condition: {}", current["condition"]["text"].to_string().yellow());
+            println!("Cloud cover: {}", current["cloud"].to_string().blue());
+            println!("UV: {}", current["uv"].to_string().white());
+            println!("Wind speed (kph): {}", current["wind_kph"].to_string().blue());
+            println!("Wind direction: {}", current["wind_dir"].to_string().green());
+            println!("Pressure (mb): {}", current["pressure_mb"].to_string().bright_green());
+            println!("Last updated: {}", current["last_updated"].to_string().bright_white());
             
-            // Check if forecast data is present and print it
-            if let Some(forecast) = data.forecast {
-                if let Some(forecast_day) = forecast.forecastday.get(0) {
-                    println!("Forecast Temperature: {}°C", forecast_day.day.avgtemp_c);
-                } else {
-                    println!("No forecast data available.");
+            if let Some(forecast) = data["forecast"]["forecastday"].as_array() {
+                for (i, forecast_day) in forecast.iter().enumerate() {
+                    println!("\n{}", format!("Forecast for day {}", i + 1).bold().magenta());
+                    println!("Date: {}", forecast_day["date"].to_string().bright_cyan());
+                    println!("Avg Temperature: {}°C", forecast_day["day"]["avgtemp_c"].to_string().yellow());
+                    println!("Max Temperature: {}°C", forecast_day["day"]["maxtemp_c"].to_string().red());
+                    println!("Min Temperature: {}°C", forecast_day["day"]["mintemp_c"].to_string().blue());
+                    println!("Condition: {}", forecast_day["day"]["condition"]["text"].to_string().green());
                 }
-            } else {
-                println!("No forecast data available.");
             }
         }
-        Err(e) => eprintln!("Error fetching weather: {}", e),
+        Err(e) => eprintln!("{}", format!("Error fetching weather: {}", e).red()),
     }
 }
 

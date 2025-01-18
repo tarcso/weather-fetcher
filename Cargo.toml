@@ -10,4 +10,5 @@ serde_json = "1.0" # for serializing and deserializing JSON
 clap = { version = "4.0", features = ["derive"] } # for parsing command-line arguments
 tokio = { version = "1", features = ["full"] } # for async runtime
 colored = "2.0" # for colored output
+dotenv = "0.15" # for reading environment variables from .env file
 

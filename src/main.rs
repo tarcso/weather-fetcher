@@ -2,6 +2,8 @@ use clap::Parser;
 use reqwest::Error;
 use serde_json::Value;
 use colored::*;  // Import the colored crate
+use dotenv::dotenv;
+use std::env;
 
 #[derive(Parser)]
 /// A simple CLI tool to fetch weather information.
@@ -29,9 +31,11 @@ async fn fetch_weather(city: &str, _units: &str, api_key: &str) -> Result<Value,
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    let api_key = "dec2bc12080a40ba88a191953251701"; // Replace with your WeatherAPI key
-    
-    match fetch_weather(&args.city, &args.units, api_key).await {
+
+    dotenv().ok();
+    let api_key = env::var("WEATHER_API_KEY").expect("API key no set");
+
+    match fetch_weather(&args.city, &args.units, &api_key).await {
         Ok(data) => {
             // Use colors to enhance the output
             let current = &data["current"];
